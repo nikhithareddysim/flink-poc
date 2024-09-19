@@ -54,7 +54,11 @@ final class UserFn implements StatefulFunction {
           //  final long lastSeenTimestampMs = context.storage().get(SEEN_TIMESTAMP_MS).orElse(nowMs);
             Integer c = sum(4, 10);
             System.out.println(c);
-            restFunction();
+
+            /**
+             * For making rest calls from stateful function
+             * */
+        //    restFunction();
 
             String greetings = String.format("Hello %s for %d time",login.getUserName(),count);
 
@@ -74,7 +78,7 @@ final class UserFn implements StatefulFunction {
     public void restFunction()
     {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpPut httpPost = new HttpPut("http://localhost:7071/process/aaditya");
+            HttpPut httpPost = new HttpPut("http://localhost:7071/process/");
             try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                 HttpEntity responseEntity = response.getEntity();
                 if (responseEntity != null) {
