@@ -1,8 +1,8 @@
 # spriced-framework-flink
 
 Run 
-  docker-compose build
-  docker-compose up
+ - docker-compose build
+ - docker-compose up
 
 Then start your main method which will start a server in your local running in port 1108
 
