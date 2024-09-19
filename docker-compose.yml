@@ -1,0 +1,173 @@
+## Licensed to the Apache Software Foundation (ASF) under one or more
+## contributor license agreements.  See the NOTICE file distributed with
+## this work for additional information regarding copyright ownership.
+## The ASF licenses this file to You under the Apache License, Version 2.0
+## (the "License"); you may not use this file except in compliance with
+## the License.  You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+#
+#version: "2.1"
+#services:
+#  zookeeper:
+#    image: wurstmeister/zookeeper
+#    ports:
+#      - "2181:2181"
+#    networks:
+#      - spriced
+#  kafka-broker:
+#    image: wurstmeister/kafka:2.12-2.0.1
+#    ports:
+#      - "9092:9092"
+#    environment:
+#      HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+#      KAFKA_CREATE_TOPICS: "names:1:1,greetings:1:1"
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#    depends_on:
+#      - zookeeper
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    networks:
+#      - spriced
+#  master:
+#    build:
+#      context: .
+#    # uncomment to start from a savepoint
+#    #command: -s /checkpoint-dir/savepoint/savepoint-bf101a-4e99820085fe
+#    expose:
+#      - "6123"
+#    ports:
+#      - "8081:8081"
+#    environment:
+#      - ROLE=master
+#      - MASTER_HOST=master
+#    volumes:
+#      - ./checkpoint-dir:/checkpoint-dir
+#    networks:
+#      - spriced
+#  worker:
+#    build:
+#      context: .
+#    expose:
+#      - "6121"
+#      - "6122"
+#    depends_on:
+#      - master
+#      - kafka-broker
+#    links:
+#      - "master:master"
+#      - "kafka-broker:kafka-broker"
+#    environment:
+#      - ROLE=worker
+#      - MASTER_HOST=master
+#    volumes:
+#      - ./checkpoint-dir:/checkpoint-dir
+#    networks:
+#      - spriced
+#
+#  kafka-ui:
+#    container_name: kafka-ui
+#    hostname: kafka-ui
+#    image: provectuslabs/kafka-ui:latest
+#    ports:
+#      - 38080:8080
+#    networks:
+#      - spriced
+#    environment:
+#      LOGGING_LEVEL_COM_PROVECTUS: WARN
+#      LOGGING_LEVEL_ROOT: WARN
+#      DYNAMIC_CONFIG_ENABLED: 'true'
+#      KAFKA_CLUSTERS_0_NAME: dev_kafka
+#      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker:9092
+#      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+#      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: kafka-connect
+#      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083
+#      KAFKA_CLUSTERS_0_AUDIT_TOPICAUDITENABLED: 'true'
+#    restart: always
+#
+#networks:
+#  spriced:
+
+version: "2.1"
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+
+  kafka-broker:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CREATE_TOPICS: "greetings:1:1"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  master:
+    build:
+      context: .
+    expose:
+      - "6123"
+    ports:
+      - "8081:8081"
+    environment:
+      - ROLE=master
+      - MASTER_HOST=master
+      # Access host machine localhost:1108 from inside the container
+      - HOST_HTTP_API=http://host.docker.internal:1108
+    volumes:
+      - ./checkpoint-dir:/checkpoint-dir
+  worker:
+    build:
+      context: .
+    expose:
+      - "6121"
+      - "6122"
+    depends_on:
+      - master
+      - kafka-broker
+    links:
+      - "master:master"
+      - "kafka-broker:kafka-broker"
+    environment:
+      - ROLE=worker
+      - MASTER_HOST=master
+      # Access host machine localhost:1108 from inside the container
+      - HOST_HTTP_API=http://host.docker.internal:1108
+    volumes:
+      - ./checkpoint-dir:/checkpoint-dir
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 38080:8080
+    environment:
+      LOGGING_LEVEL_COM_PROVECTUS: WARN
+      LOGGING_LEVEL_ROOT: WARN
+      DYNAMIC_CONFIG_ENABLED: 'true'
+      KAFKA_CLUSTERS_0_NAME: dev_kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker:9092
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: kafka-connect
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083
+      KAFKA_CLUSTERS_0_AUDIT_TOPICAUDITENABLED: 'true'
+    restart: always
+
+
+

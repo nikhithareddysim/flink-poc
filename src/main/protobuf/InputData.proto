@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package org.example;
+option java_package = "org.example.generated";
+option java_multiple_files = true;
+
+message GreetRequest {
+    string who = 1;
+}
+
+message GreetResponse {
+    string who = 1;
+    string greeting = 2;
+}
