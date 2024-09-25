@@ -54,8 +54,8 @@ public final class UserLogin {
         return userName;
     }
 
-    public LoginType getLoginType() {
-        return loginType;
+    public String getLoginType() {
+        return loginType.name();
     }
 }
 

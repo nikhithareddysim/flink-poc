@@ -19,6 +19,7 @@ public class Main {
         final StatefulFunctions functions = new StatefulFunctions();
         functions.withStatefulFunction(UserFn.SPEC);
 
+
         // ... and build a request-reply handler for the registered functions, which understands how to
         // decode invocation requests dispatched from StateFun / encode side-effects (e.g. state storage
         // updates, or invoking other functions) as responses to be handled by StateFun.
